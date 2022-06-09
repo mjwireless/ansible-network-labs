@@ -1,0 +1,21 @@
+---
+ansible-navigator:
+  ansible:
+    inventory:
+      entries:
+      - hosts
+  execution-environment:
+    container-engine: podman
+    enabled: true
+    environment-variables:
+      pass:
+      - USER
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    image: registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8
+    pull:
+      policy: missing
+  mode: interactive
+  playbook-artifact:
+    enable: false
+
