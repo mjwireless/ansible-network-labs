@@ -48,14 +48,7 @@ R119 ansible_host=10.1.119.10
 R120 ansible_host=10.1.120.10
 R121 ansible_host=10.1.121.10
 R122 ansible_host=10.1.122.10
-R123 ansible_host=10.1.123.10
-R124 ansible_host=10.1.124.10
-R125 ansible_host=10.1.125.10
-R126 ansible_host=10.1.126.10
-R127 ansible_host=10.1.127.10
-R128 ansible_host=10.1.128.10
-R129 ansible_host=10.1.129.10
-R130 ansible_host=10.1.130.10
+
 
 [lab-master]
 R150 ansible_host=10.1.150.10
