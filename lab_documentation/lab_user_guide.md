@@ -36,9 +36,41 @@
 1. Login to [Github](https://github.com)
 1. Go to [https://github.com/mysidlabs/f5-ansible-labs](https://github.com/mysidlabs/f5-ansible-labs)
 1. Click on the Fork button in the upper-right section of the page:
-![](images/image002.png)
-***Note: Once forked, you can modify all files within Github***
+![](images/fork_repo.png)
+> **Note**: Once forked, you can modify all files within Github***
+
 ### Connect to your jump host
+#### ***For MacOS, Linux, or WSL (Windows subsystem for Linux)***
+
+Connect to your jump host where ### is replaced by your user number.  
+
+```
+>>  ssh siduser<###>@siduser<###>.jump.mysidlabs.com
+Password: <<< password >>>
+```
+> **Note**: The password will be provided by the lab instructor.
+
+You should then see the following:
+```bash
+Welcome to the CDW/Sirius Red Hat Immersion Day lab environment
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+siduser101@jump:~$ 
+```
+#### ***For Windows Users***
+The following is an example using Putty.
+
+* Type `siduser###.jump.mysidlabs.com` (where ### is your numeric userid) and click the Open button.
+
+    ![](images/putty.png)
+
+* Click the yes button to accept the ssh key
+
+    ![](images/putty_accept_key.png)
+
+* Type in your username and password in the terminal screen
+
+    ![](images/putty_username_password.png)
+
 ## Part 2: Explore the environment
 ### Overview
 * Review the topology
@@ -63,26 +95,7 @@ The topology is simple for the sake of learning some ansible basics. Traffic wil
 
 ![lab-topology.png should be visible here](images/lab-topology.png)
 
-### Connect to your jump host.
-Connect to your jump host where ### is replaced by your user number.  
-> **Note**: The password will be provided by the lab instructor.
-```
->>  ssh siduser<###>@siduser<###>.jump.mysidlabs.com
-Password: <<< password >>>
-```
-You should then see the following:
-```bash
-Welcome to the CDW/Sirius Red Hat Immersion Day lab environment
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-Cloning into 'ansible-network-labs'...
-remote: Enumerating objects: 125, done.
-remote: Counting objects: 100% (125/125), done.
-remote: Compressing objects: 100% (69/69), done.
-remote: Total 125 (delta 44), reused 111 (delta 32), pack-reused 0
-Receiving objects: 100% (125/125), 22.19 KiB | 11.09 MiB/s, done.
-Resolving deltas: 100% (44/44), done. 
-siduser101@jump:~$ 
-```
+
 
 ## Lab 1 - `ansible-navigator` and execution environments
 1. Review the project structure. 
@@ -263,9 +276,9 @@ siduser101@jump:~$
         "rc": 0
     }
     ```
-    > *TIP:*  Ansible supports calling modules directly from the command line via the ansible command. These are called Ad-Hoc commands and are often used to establish connectivity as in here with the ping module. Another common use case is to inspect a host or group of hosts with fact gathering modules like ***setup***. You can optionally pass parameters to Ad-Hoc commands with the -a option: `ansible localhost -m debug -a "msg='passing a parameter'"`
+    > **TIP**: Ansible supports calling modules directly from the command line via the ansible command. These are called Ad-Hoc commands and are often used to establish connectivity as in here with the ping module. Another common use case is to inspect a host or group of hosts with fact gathering modules like ***setup***. You can optionally pass parameters to Ad-Hoc commands with the -a option: `ansible localhost -m debug -a "msg='passing a parameter'"`
 
-    > *NOTE*:  The ping module, without additional parameters, is unable to successfully communicate with the Routers. By default, Ansible connections are handled transparently by ssh and no connection type needs to be set. This works well in a typical server environment but typically not for network devices. However, Ansible has a pluggable connection architecture which allows it to be extended to connect to these and other devices.  Other examples of connection: types include local when connecting to the localhost and winrm which allows Ansible to connect to Microsoft Windows platforms.
+    > **NOTE**:  The ping module, without additional parameters, is unable to successfully communicate with the Routers. By default, Ansible connections are handled transparently by ssh and no connection type needs to be set. This works well in a typical server environment but typically not for network devices. However, Ansible has a pluggable connection architecture which allows it to be extended to connect to these and other devices.  Other examples of connection: types include local when connecting to the localhost and winrm which allows Ansible to connect to Microsoft Windows platforms.
 
 1. Retry the ansible ping again selecting the group routers and this time setting the connection type to network_cli
    ```bash
@@ -278,7 +291,7 @@ siduser101@jump:~$
     ```
     > **Note**: Here Ansible combines the connection type **-c network_cli** with the **ansible_network_os=ios** inventory variable and now knows how to successfully communicate with the network device.
     
-    > ***TIP:***  Ansible allows you to pass variables like ansible_network_os on the command line with the -e option and this has the highest precedence, i.e. will override any variable you have set.   
+    > **TIP**:  Ansible allows you to pass variables like ansible_network_os on the command line with the -e option and this has the highest precedence, i.e. will override any variable you have set.   
     You could try setting this to an illegal value, for example:   
     ***ansible routers -m ping -c network_cli -e ansible_network_os=linux***    
     You can also try setting it to a different vendors network operating system such as junos, the result may at first be surprising. However, ‘network_cli’ uses similar mechanisms to connect to network devices so a misconfiguration here may not result in failure.
@@ -356,123 +369,448 @@ Execute the following command to decrypt the group_vars/all.yml file:
 ## Part 3 - Explore, configure and backup router using playbooks
 ### Lab 1 - Overview
 * Direcory structure review
-* ***Execution Environments*** and the new `ansible-navigator` command line tool.
+* Review ***Execution Environments*** and the new `ansible-navigator` command line tool.
 * Understand and use facts
 * Run initial playbook to load basic configuration to router
-  
-### Use `podman`, `ansible-builder` and `ansible-navigator` to work with execution environments
-The Red Hat Ansible Automation Platform version 2.0 and above used *execution environment* containers to package and distribute automation dependencies in a portable way.:
-Type the following at the command line:
-```bash
-siduser101@jump:~/ansible-network-labs$ podman images
-REPOSITORY  TAG         IMAGE ID    CREATED     SIZE
-siduser270@jump:~/sid-ansible-security$ 
-```
-Notice that there are currently no local images.
-Type the `ansible-navigator` command, first making sure that you are in the root of the ansible-network-labs project:
-```bash
-siduser101@jump:~/ansible-network-labs$ ansible-navigator
---------------------------------------------------------------------------------------------------------------
-Execution environment image and pull policy overview
---------------------------------------------------------------------------------------------------------------
-Execution environment image name:     registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8:latest
-Execution environment image tag:      latest
-Execution environment pull arguments: None
-Execution environment pull policy:    missing
-Execution environment pull needed:    True
---------------------------------------------------------------------------------------------------------------
-Updating the execution environment
---------------------------------------------------------------------------------------------------------------
-Running the command: podman pull registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8:latest
-Trying to pull registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8:latest...
-Getting image source signatures
-Checking if image destination supports signatures
-Copying blob 50223de3f59a done  
-Copying blob a96e4e55e78a done  
-Copying blob 67d8ef478732 done  
-Copying blob bddb6822d87e done  
-Copying blob a9dacd757072 done  
-Copying config d2595109e4 done  
-Writing manifest to image destination
-Storing signatures
-d2595109e44f42bd917121949c925a64b50bf8fddfa482ed65f47be4adaee770
-```
-Since this is our first execution of ansible-navigator it has pulled the execution environment specified in the `ansible-navigator.yml` file which is the configuration file for this tool.  Once the pull has completed the text-based UI for ansible navigator will launch.
-```bash
- 0│Welcome                                                                                             ▒
- 1│————————————————————————————————————————————————————————————————————————————————————————————————————▒
- 2│                                                                                                    ▒
- 3│Some things you can try from here:                                                                  ▒
- 4│- :collections                                    Explore available collections                     ▒
- 5│- :config                                         Explore the current ansible configuration         ▒
- 6│- :doc <plugin>                                   Review documentation for a module or plugin       ▒
- 7│- :help                                           Show the main help page                           ▒
- 8│- :images                                         Explore execution environment images              ▒
- 9│- :inventory -i <inventory>                       Explore an inventory                              ▒
-10│- :log                                            Review the application log                        ▒
-11│- :lint <file or directory>                       Lint Ansible/YAML files (experimental)            ▒
-12│- :open                                           Open current page in the editor                   ▒
-13│- :replay                                         Explore a previous run using a playbook artifact  ▒
-14│- :run <playbook> -i <inventory>                  Run a playbook in interactive mode                ▒
-15│- :settings                                       Review the current ansible-navigator settings     ▒
-16│- :quit                                           Quit the application                              ▒
-17│                                                                                                    ▒
-18│happy automating,                                                                                   ▒
-19│                                                                                                    ▒
-^b/PgUp page up         ^f/PgDn page down         ↑↓ scroll         esc back         :help help
 
-```
+### Directory Structure
 
-> **Note**: Follow along with the instructor as he reviews the `ansible-navigator.yml` config and demonstrates how to navigate in the tool.
+### Review execution Environments and `ansible-navigator`
+1. Use `podman`, `ansible-builder` and `ansible-navigator` to work with execution environments
+    The Red Hat Ansible Automation Platform version 2.0 and above used *execution environment* containers to package and distribute automation dependencies in a portable way.:
+    Type the following at the command line:
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ podman images
+    REPOSITORY  TAG         IMAGE ID    CREATED     SIZE
+    siduser270@jump:~/sid-ansible-security$ 
+    ```
+    > **Note**: Notice that there are currently no local images.
 
+1. Type the `ansible-navigator` command, first making sure that you are in the root of the ansible-network-labs project:
+   ```bash
+   siduser101@jump:~/ansible-network-labs$ ansible-navigator
+   --------------------------------------------------------------------------------------------------------------
+   Execution environment image and pull policy overview
+   --------------------------------------------------------------------------------------------------------------
+   Execution environment image name:     registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8:latest
+   Execution environment image tag:      latest
+   Execution environment pull arguments: None
+   Execution environment pull policy:    missing
+   Execution environment pull needed:    True
+   --------------------------------------------------------------------------------------------------------------
+   Updating the execution environment
+   --------------------------------------------------------------------------------------------------------------
+   Running the command: podman pull registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8:latest
+   Trying to pull registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8:latest...
+   Getting image source signatures
+   Checking if image destination supports signatures
+   Copying blob 50223de3f59a done  
+   Copying blob a96e4e55e78a done  
+   Copying blob 67d8ef478732 done  
+   Copying blob bddb6822d87e done  
+   Copying blob a9dacd757072 done  
+   Copying config d2595109e4 done  
+   Writing manifest to image destination
+   Storing signatures
+   d2595109e44f42bd917121949c925a64b50bf8fddfa482ed65f47be4adaee770
+   ```
+   Since this is our first execution of ansible-navigator it has pulled the execution environment specified in the `ansible-navigator.yml` file which is the configuration file for this tool.  Once the pull has completed the text-based UI for ansible navigator will launch.
+   ```bash
+    0│Welcome                                                                                             ▒
+    1│————————————————————————————————————————————————————————————————————————————————————————————————————▒
+    2│                                                                                                    ▒
+    3│Some things you can try from here:                                                                  ▒
+    4│- :collections                                    Explore available collections                     ▒
+    5│- :config                                         Explore the current ansible configuration         ▒
+    6│- :doc <plugin>                                   Review documentation for a module or plugin       ▒
+    7│- :help                                           Show the main help page                           ▒
+    8│- :images                                         Explore execution environment images              ▒
+    9│- :inventory -i <inventory>                       Explore an inventory                              ▒
+   10│- :log                                            Review the application log                        ▒
+   11│- :lint <file or directory>                       Lint Ansible/YAML files (experimental)            ▒
+   12│- :open                                           Open current page in the editor                   ▒
+   13│- :replay                                         Explore a previous run using a playbook artifact  ▒
+   14│- :run <playbook> -i <inventory>                  Run a playbook in interactive mode                ▒
+   15│- :settings                                       Review the current ansible-navigator settings     ▒
+   16│- :quit                                           Quit the application                              ▒
+   17│                                                                                                    ▒
+   18│happy automating,                                                                                   ▒
+   19│                                                                                                    ▒
+   ^b/PgUp page up         ^f/PgDn page down         ↑↓ scroll         esc back         :help help
 
-Use `ansible-navigator` to inspect new image:
-```bash
-siduser101@jump:~/sid-ansible-security$ ansible-navigator images
-```
+   ```
 
-```
-  NAME                             TAG      EXECUTION ENVIRONMENT	CREATED         SIZE
-0│sid-security-ee (primary)        latest                    True	2 months ago    681 MB
+   > **Note**: Follow along with the instructor as he reviews the `ansible-navigator.yml` config and demonstrates how to navigate in the tool.
 
+1. Use `ansible-navigator` to inspect new image:
+    ```bash
+    siduser101@jump:~/sid-ansible-security$ ansible-navigator images
+    ```
 
-
-
-
-
-^f/PgUp page up    ^b/PgDn page down    ↑↓ scroll    esc back    [0-9] goto    :help help
-
-```
-
-> **Note**: Again, follow along with the instructor as he explores `sid-security-ee` execution environment.
-
-### Review execution environments
-1. Review ee project files
-1. Review [`podman`](https://https://podman.io/) vs. `docker`
-1. Review [`ansible-buider`](https://www.ansible.com/blog/introduction-to-ansible-builder)
-1. Build sec-sid-mitigation-ee
-
-> **OPTIONAL**: building this execution environment is optional.  It will take a couple of minutes to complete.
-```bash
-    ansible-builder build --tag sec_sid_ee
-```
-### Use `podman` to list the local images:
-```bash
-siduser101@jump:~/sid-ansible-security$ podman images
-REPOSITORY                                 TAG         IMAGE ID      CREATED            SIZE
-<none>                                     <none>      cc8028f10813  About an hour ago  907 MB
-<none>                                     <none>      a04cc3797cca  About an hour ago  913 MB
-<none>                                     <none>      774fabe4d536  About an hour ago  881 MB
-<none>                                     <none>      0643cb081bc6  About an hour ago  896 MB
-localhost/sid-security-ee                  latest      9ad85776c89f  About an hour ago  908 MB
-<none>                                     <none>      ee55b78317df  About an hour ago  791 MB
-<none>                                     <none>      c5809904a915  About an hour ago  891 MB
-quay.io/ansible/ansible-runner             latest      912ba7432e89  7 hours ago        876 MB
-quay.io/ansible/ansible-builder            latest      35d2481da9e9  8 hours ago        769 MB
-ghcr.io/mysidlabs/sid-security-ee          latest      7d187fedb8ea  2 months ago       681 MB
-quay.io/ansible/ansible-navigator-demo-ee  0.6.0       e65e4777caa3  5 months ago       1.35 GB
-```
+    ```
+    NAME                             TAG      EXECUTION ENVIRONMENT	CREATED         SIZE
+    0│sid-security-ee (primary)        latest                    True	2 months ago    681 MB
 
 
+
+
+
+
+    ^f/PgUp page up    ^b/PgDn page down    ↑↓ scroll    esc back    [0-9] goto    :help help
+
+    ```
+
+    > **Note**: Again, follow along with the instructor as he explores `sid-security-ee` execution environment.
+
+### Understand and use facts
+   **Gather facts from router**    
+   Like servers it is possible to gather facts for networking devices including physical, virtual, and software configuration. Unlike Linux and UNIX servers the traditional ‘setup’ module does not gather facts about network devices and can be turned off in your playbook header section with ‘gather_facts: False’
+1. Look at the 1.0-router-facts.yml file:
+   ```yml
+    1 ---
+    2 - name: Show router configurations
+    3   hosts: routers
+    4   connection: network_cli
+    5   gather_facts: no
+    6 
+    7   tasks:
+    8   - name: gather ios_facts
+    9     ios_facts:
+    10     register: facts
+    11 
+    12   - name: print out the results of ios_facts
+    13     debug:
+    14       msg: "{{ facts }}"
+    15 ...
+   ```
+   > **Note**: In the last line we are using jinja2 substitution to tell ansible to use the hostvars for each target node in the inventory group (inventory_hostname) and extract the value of ansible_net_model.
+1. Run the 1.0-router-facts.yml playbook and see what the output is:
+   ```bash
+   siduser101@jump:~/ansible-network-labs$ ansible-navigator run 1.0-router-facts.yml 
+
+    PLAY [Show router configurations] **********************************************
+
+    TASK [gather ios_facts] ********************************************************
+    ok: [R101]
+
+    TASK [print out the results of ios_facts] **************************************
+    ok: [R101] => {
+        "msg": {
+            "ansible_facts": {
+                "ansible_net_api": "cliconf",
+                "ansible_net_gather_network_resources": [],
+                "ansible_net_gather_subset": [
+                    "default"
+                ],
+                "ansible_net_hostname": "ip-10-1-101-10",
+                "ansible_net_image": "boot:packages.conf",
+                "ansible_net_iostype": "IOS-XE",
+                "ansible_net_model": "CSR1000V",
+                "ansible_net_python_version": "3.9.7",
+                "ansible_net_serialnum": "9AOQXPU0I3P",
+                "ansible_net_system": "ios",
+                "ansible_net_version": "17.01.01",
+                "ansible_network_resources": {}
+            },
+            "changed": false,
+            "failed": false
+        }
+    }
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$ 
+   ``` 
+   > **Tip**: You can edit the ansible.cfg file parameter “stdout_callback = json” if you’d prefer the output to be formatted in JSON.
+1. Explore the output to see what is retrieved from the router.  These collected facts can be parsed and filtered.
+1. Now try filtering the information we want to see.  Look at the 1.1-facts2.yml and run it.
+   ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 1.1-facts2.yml
+
+    PLAY [gather information from routers] *****************************************
+
+    TASK [gather router facts] *****************************************************
+    ok: [R101]
+
+    TASK [display version] *********************************************************
+    ok: [R101] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+
+    TASK [display serial number] ***************************************************
+    ok: [R101] => {
+        "msg": "The serial number is:9AOQXPU0I3P"
+    }
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$ 
+   ```
+1. Now run the 1.1-facts2.yml playbook against multiple hosts.
+   ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 1.1-facts2.yml -i all-hosts
+
+    PLAY [gather information from routers] *****************************************
+
+    TASK [gather router facts] *****************************************************
+    ok: [R104]
+    ok: [R101]
+    ok: [R103]
+    ok: [R102]
+    ok: [R105]
+
+    TASK [display version] *********************************************************
+    ok: [R101] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R102] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R104] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R105] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R103] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+
+    TASK [display serial number] ***************************************************
+    ok: [R101] => {
+        "msg": "The serial number is:9AOQXPU0I3P"
+    }
+    ok: [R102] => {
+        "msg": "The serial number is:9LK2FR50AP3"
+    }
+    ok: [R103] => {
+        "msg": "The serial number is:9SDR4GFM8G9"
+    }
+    ok: [R105] => {
+        "msg": "The serial number is:98KU66X1XDK"
+    }
+    ok: [R104] => {
+        "msg": "The serial number is:9P8U34E1R49"
+    }
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R102                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R103                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R104                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R105                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+    > **Tip**: The “-i" parameter tells ansible to overide the inventory file in the ansible.cfg file.
+
+    > **Note**: The difference here is running the command against multiple devices in paralell.
+
+    > **Tip**: Each of the major networking platforms has their own facts module which is simple the name of the ansible_networking_os prefixing _facts. In this case ios_facts, with Juniper devices the equivalent module would be junos_facts.    
+    Here we use a common pattern in Ansible to capture the results of running the ios_facts module in a register variable we have chosen to call facts. Then in the second, debug, task we output the contents of the variable facts.
+1. Look at 1.2.1-adv-facts.yml and run 1.2.1-adv-facts.yml against default inventory file and with all-hosts inventory file.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 1.2.1-adv-facts.yml
+
+    PLAY [GATHER INFORMATION FROM ROUTERS] *****************************************
+
+    TASK [GATHER ROUTER FACTS] *****************************************************
+    ok: [R101]
+
+    TASK [DISPLAY VERSION] *********************************************************
+    ok: [R101] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+
+    TASK [DISPLAY SERIAL NUMBER] ***************************************************
+    ok: [R101] => {
+        "msg": "The serial number is:9AOQXPU0I3P"
+    }
+
+    TASK [COLLECT OUTPUT OF SHOW COMMANDS] *****************************************
+    ok: [R101]
+
+    TASK [DISPLAY THE HOSTNAME] ****************************************************
+    ok: [R101] => {
+        "msg": "The hostname ip-10-1-101-10"
+    }
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 1.2.1-adv-facts.yml -i all-hosts
+
+    PLAY [GATHER INFORMATION FROM ROUTERS] *****************************************
+
+    TASK [GATHER ROUTER FACTS] *****************************************************
+    ok: [R103]
+    ok: [R101]
+    ok: [R105]
+    ok: [R104]
+    ok: [R102]
+
+    TASK [DISPLAY VERSION] *********************************************************
+    ok: [R101] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R102] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R105] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R103] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+    ok: [R104] => {
+        "msg": "The IOS version is: 17.01.01"
+    }
+
+    TASK [DISPLAY SERIAL NUMBER] ***************************************************
+    ok: [R101] => {
+        "msg": "The serial number is:9AOQXPU0I3P"
+    }
+    ok: [R102] => {
+        "msg": "The serial number is:9LK2FR50AP3"
+    }
+    ok: [R105] => {
+        "msg": "The serial number is:98KU66X1XDK"
+    }
+    ok: [R103] => {
+        "msg": "The serial number is:9SDR4GFM8G9"
+    }
+    ok: [R104] => {
+        "msg": "The serial number is:9P8U34E1R49"
+    }
+
+    TASK [COLLECT OUTPUT OF SHOW COMMANDS] *****************************************
+    ok: [R101]
+    ok: [R102]
+    ok: [R104]
+    ok: [R103]
+    ok: [R105]
+
+    TASK [DISPLAY THE HOSTNAME] ****************************************************
+    ok: [R102] => {
+        "msg": "The hostname ip-10-1-102-10"
+    }
+    ok: [R101] => {
+        "msg": "The hostname ip-10-1-101-10"
+    }
+    ok: [R103] => {
+        "msg": "The hostname ip-10-1-103-10"
+    }
+    ok: [R104] => {
+        "msg": "The hostname ip-10-1-104-10"
+    }
+    ok: [R105] => {
+        "msg": "The hostname ip-10-1-105-10"
+    }
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R102                       : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R103                       : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R104                       : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R105                       : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$
+    ```
+
+    <span style="color:red">** **BONUS** **</span>    
+    Look at 1.2.2-adv-facts-filter.yml and run 1.2.2-adv-facts-filter.yml
+Try to decipher what it is doing.
+
+## Do the initial configuration of your router
+We will now run a playbook to put a base configuration on your router.  This will configure the hostname, enable GigabitEthernet2, set the IP on the interface and add a user.
+1. Modify the username/password in the 1.3-init.yml in the lab1 folder in your repository, pull down your change and validate that you have successfully pulled the change by looking at the 1.3-init.yml on your jump box.
+    ```yml
+    33 
+    34   - name: add username and password to router
+    35     ios_config:
+    36       lines:
+    37         - username siduserXXX privilege 15 secret password
+    38 ...
+    ```
+    > **Note**: <span style="color:red">Storing Usernames and Passwords in git is bad practice.  We've done this for lab purposes in this excercise.  We will look at ansible-vault in a later lab.</span>
+
+    > **Tip**: Pay attention to indentation. Ansible provides a way to validate syntax before running a playbook.  This will not validate that you are using a module correctly.  It only validates you are using proper syntax structure.
+    ```yml
+        siduser101@jump:~/ansible-network-labs$ ansible-navigator lint 1.3-init.yml 
+        yaml: truthy value should be one of [false, true] (truthy)
+        1.3-init.yml:5
+
+        yaml: wrong indentation: expected 4 but found 2 (indentation)
+        1.3-init.yml:11
+
+        yaml: trailing spaces (trailing-spaces)
+        1.3-init.yml:28
+
+        yaml: trailing spaces (trailing-spaces)
+        1.3-init.yml:33
+
+        yaml: no new line character at the end of file (new-line-at-end-of-file)
+        1.3-init.yml:38
+
+        siduser101@jump:~/ansible-network-labs$
+    ```
+1. Run the 1.3-init.yml playbook against your router.
+    > **Note**:  While you can run your 1.3-init.yml and other configuration playbooks on all the routers in the lab we ask that you only run the configuration playbooks on your assigned router.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 1.3-init.yml 
+
+    PLAY [Initialize Router] *******************************************************
+
+    TASK [configure R101 hostname] *************************************************
+    [WARNING]: To ensure idempotency and correct diff the input configuration lines
+    should be similar to how they appear if present in the running configuration on
+    device
+    changed: [R101]
+
+    TASK [configure interface Gig2] ************************************************
+    changed: [R101]
+
+    TASK [configure interface Gig1] ************************************************
+    changed: [R101]
+
+    TASK [Setting banner message to "oops, you ran this playbook without reading it first!"] ***
+    changed: [R101]
+
+    TASK [add username and password to router] *************************************
+    changed: [R101]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=5    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$
+    ```
+1. Now SSH into the router from the jump station and check the confiuration.
+    > **Note**: The ‘XXX’ in the example below should be replaced with your ID.  The password is the password you configured before.
+    ```
+    siduser101@jump:~/ansible-network-labs$ ssh siduserXXX@10.1.101.10
+    The authenticity of host '10.1.101.10 (10.1.101.10)' can't be established.
+    RSA key fingerprint is SHA256:xCQ5mCMZp97euDZ7etQfZroqmunsA7D0x98LzY17DzQ.
+    Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+    Warning: Permanently added '10.1.101.10' (RSA) to the list of known hosts.
+    Password: 
+    oops, you ran this playbook without reading it first! 
+
+
+    R101#sho ip int brief
+    Interface              IP-Address      OK? Method Status                Protocol
+    GigabitEthernet1       10.1.101.10     YES DHCP   up                    up      
+    GigabitEthernet2       10.2.101.10     YES DHCP   up                    up      
+    VirtualPortGroup0      192.168.35.101  YES TFTP   up                    up      
+    R101#
+    ```
+1. Ping the instructor router R0 10.2.0.10
+    ```
+    R101#ping 10.2.0.10
+    Type escape sequence to abort.
+    Sending 5, 100-byte ICMP Echos to 10.2.0.10, timeout is 2 seconds:
+    .!!!!
+    Success rate is 80 percent (4/5), round-trip min/avg/max = 1/1/1 ms
+    R101#
+    ```
 
 
