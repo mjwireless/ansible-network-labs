@@ -27,7 +27,18 @@
     * Interact with a job containing a Survey 
 
 ## Part 1: Initial Setup
+### Overview
+* Fork the lab github repository to your own repository so you can edit and modify. 
+* Accessing the jump station 
+* Downloading your forked repository to the jump station 
 
+### Fork the Sirius Ansible networking GitHub Repository
+1. Login to [Github](https://github.com)
+1. Go to [https://github.com/mysidlabs/f5-ansible-labs](https://github.com/mysidlabs/f5-ansible-labs)
+1. Click on the Fork button in the upper-right section of the page:
+![](images/image002.png)
+***Note: Once forked, you can modify all files within Github***
+### Connect to your jump host
 ## Part 2: Explore the environment
 ### Overview
 * Review the topology
