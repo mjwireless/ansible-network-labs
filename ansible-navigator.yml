@@ -15,7 +15,10 @@ ansible-navigator:
     image: registry.redhat.io/ansible-automation-platform-22/ee-supported-rhel8
     pull:
       policy: missing
-  mode: interactive
+  logging:
+    append: true
+    file: $PWD/run-artifacts/ansible-navigator.log
+  mode: stdout
   playbook-artifact:
-    enable: false
-
+    enable: true
+    save-as: $PWD/run-artifacts/{playbook_name}-artifact-{time_stamp}.json
