@@ -803,6 +803,7 @@ We will now run a playbook to put a base configuration on your router.  This wil
     VirtualPortGroup0      192.168.35.101  YES TFTP   up                    up      
     R101#
     ```
+
 1. Ping the instructor router R0 10.2.0.10
     ```
     R101#ping 10.2.0.10
@@ -813,4 +814,99 @@ We will now run a playbook to put a base configuration on your router.  This wil
     R101#
     ```
 
+1. Type exit to leave the router cli
+    ```
+    R101#exit
+    ```
 
+### <span style="color:red">**Bonus** </span> - Using `ansible-vault`
+Run playbook 1.4 using ansible vault to encrypt and decrypt a variable file containing the usernames and passwords.
+1. Look at encrypt.yml.  Modify the file with your username and passwword from lab 
+    ```yml
+    1 username: siduserXXX
+    2 password: password                     
+    ```
+1. Encrypt the encrypt.yml file and look at it again.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ cat encrypt.yml 
+    username: siduserXXX
+    password: password
+
+    siduser101@jump:~/ansible-network-labs$ ansible-vault encrypt encrypt.yml 
+    New Vault password: 
+    Confirm New Vault password: 
+    Encryption successful
+    siduser101@jump:~/ansible-network-labs$ cat encrypt.yml 
+    $ANSIBLE_VAULT;1.1;AES256
+    62336331636532323564343063383061663035383964383430613430366364316635343463303735
+    6639636662333737613639376331323531313661343932380a323363616237653464386665333863
+    31623139393732613166396139656461653435663963353832333833326337366165353932363864
+    3232653734613631340a346635656331383830343363336635616136333863633466346235613361
+    36636364626235323137666339623135613030613662393265613931303038356665316337306633
+    3939653337373832663933633238343364303164326461303965
+    siduser101@jump:~/ansible-network-labs$
+    ```
+1. Use the view command to view the encrypted file.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-vault view encrypt.yml 
+    Vault password: 
+    username: siduserXXX
+    password: password
+
+    siduser101@jump:~/ansible-network-labs$
+    ```
+1. Use the rekey command to change the password/encryption key for the encrypt.yml file.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-vault rekey encrypt.yml
+    Vault password: 
+    New Vault password: 
+    Confirm New Vault password: 
+    Rekey successful
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+1. Use the “- - help” command to see what other options are available.  Also review the ansible-vault documentation.  https://docs.ansible.com/ansible/latest/user_guide/vault.html#vault-ids-and-multiple-vault-passwords
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-vault --help
+    usage: ansible-vault [-h] [--version] [-v] {create,decrypt,edit,view,encrypt,encrypt_string,rekey} ...
+
+    encryption/decryption utility for Ansible data files
+
+    positional arguments:
+    {create,decrypt,edit,view,encrypt,encrypt_string,rekey}
+        create              Create new vault encrypted file
+        decrypt             Decrypt vault encrypted file
+        edit                Edit vault encrypted file
+        view                View vault encrypted file
+        encrypt             Encrypt YAML file
+        encrypt_string      Encrypt a string
+        rekey               Re-key a vault encrypted file
+
+    optional arguments:
+    --version             show program's version number, config file location, configured module search path,
+                            module location, executable location and exit
+    -h, --help            show this help message and exit
+    -v, --verbose         Causes Ansible to print more debug messages. Adding multiple -v will increase the
+                            verbosity, the builtin plugins currently evaluate up to -vvvvvv. A reasonable level
+                            to start is -vvv, connection debugging might require -vvvv.
+
+    See 'ansible-vault <command> --help' for more information on a specific command.
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+1. Run the 1.4 playbook with the encrypted variable file using the --ask-vault-pass parameter.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-playbook 1.4-user-setup.yml --ask-vault-pass
+    Vault password: 
+
+    PLAY [Add User] ***********************************************************************************************
+
+    TASK [add username and password to router] ********************************************************************
+    [WARNING]: To ensure idempotency and correct diff the input configuration lines should be similar to how they
+    appear if present in the running configuration on device
+    changed: [R101]
+
+    PLAY RECAP ****************************************************************************************************
+    R101                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+    siduser101@jump:~/ansible-network-labs$ 
+
+    ```
