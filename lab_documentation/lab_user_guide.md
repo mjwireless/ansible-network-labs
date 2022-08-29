@@ -412,7 +412,7 @@ Since this is our first execution of ansible-navigator it has pulled the executi
 
 ```
 
-> **Note**: Follow along with the instructor as he reviews the `ansible-navigator.yml` config and also looks at some of the sub-commands of the tool.
+> **Note**: Follow along with the instructor as he reviews the `ansible-navigator.yml` config and demonstrates how to navigate in the tool.
 
 
 Use `ansible-navigator` to inspect new image:
