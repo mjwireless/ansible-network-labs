@@ -757,7 +757,7 @@ We will now run a playbook to put a base configuration on your router.  This wil
     ```
 1. Run the 1.3-init.yml playbook against your router.
     > **Note**:  While you can run your 1.3-init.yml and other configuration playbooks on all the routers in the lab we ask that you only run the configuration playbooks on your assigned router.
-    ```bash
+    ```yml
     siduser101@jump:~/ansible-network-labs$ ansible-navigator run 1.3-init.yml 
 
     PLAY [Initialize Router] *******************************************************
@@ -827,7 +827,7 @@ Run playbook 1.4 using ansible vault to encrypt and decrypt a variable file cont
     2 password: password                     
     ```
 1. Encrypt the encrypt.yml file and look at it again.
-    ```bash
+    ```yml
     siduser101@jump:~/ansible-network-labs$ cat encrypt.yml 
     username: siduserXXX
     password: password
@@ -865,7 +865,7 @@ Run playbook 1.4 using ansible vault to encrypt and decrypt a variable file cont
     siduser101@jump:~/ansible-network-labs$ 
     ```
 1. Use the “- - help” command to see what other options are available.  Also review the ansible-vault documentation.  https://docs.ansible.com/ansible/latest/user_guide/vault.html#vault-ids-and-multiple-vault-passwords
-    ```bash
+    ```yml
     siduser101@jump:~/ansible-network-labs$ ansible-vault --help
     usage: ansible-vault [-h] [--version] [-v] {create,decrypt,edit,view,encrypt,encrypt_string,rekey} ...
 
@@ -893,7 +893,7 @@ Run playbook 1.4 using ansible vault to encrypt and decrypt a variable file cont
     siduser101@jump:~/ansible-network-labs$ 
     ```
 1. Run the 1.4 playbook with the encrypted variable file using the --ask-vault-pass parameter.
-    ```bash
+    ```yml
     siduser101@jump:~/ansible-network-labs$ ansible-playbook 1.4-user-setup.yml --ask-vault-pass
     Vault password: 
 
@@ -935,7 +935,7 @@ Run playbook 1.4 using ansible vault to encrypt and decrypt a variable file cont
 
     ```
 1. Run the playbook.
-    ```bash
+    ```yml
     siduser101@jump:~/ansible-network-labs$ ansible-navigator run 2.0-snmp.yml 
 
     PLAY [snmp ro/rw string configuration] *****************************************
@@ -993,4 +993,314 @@ Run playbook 1.4 using ansible vault to encrypt and decrypt a variable file cont
     ```
     > **Note**: Notice the use of vars to setup a variable banner_message.  The use of vars is important to making playbooks more reuseable and facilitates easier editing.  The variable can be reset at the command line by using ansible-playbook banner.yml -e "banner_message='my new message’”.  The -e option allows you to over-write any variable as it has the highest priority in the Ansible variable structure.
 1. Run the playbook.
+    ```yml
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 2.1-banner.yml 
+
+    PLAY [Update banner message] ***************************************************
+
+    TASK [Update banner message to 'Sirius Immersion Days are Super Fun and Cool!!!!'] ***
+    [WARNING]: To ensure idempotency and correct diff the input configuration lines
+    should be similar to how they appear if present in the running configuration on
+    device
+    changed: [R101]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$
+    ```
+    > **Note**: Notice how the variable message was substituted in the Task “- name:” message
+1. Check that the message was updated as expected.
+    ```json
+    siduser101@jump:~/ansible-network-labs$ ansible routers -m ios_command -a "commands='sh banner motd'"
+    R101 | SUCCESS => {
+        "changed": false,
+        "stdout": [
+            "Sirius Immersion Days are Super Fun and Cool!!!!"
+        ],
+        "stdout_lines": [
+            [
+                "Sirius Immersion Days are Super Fun and Cool!!!!"
+            ]
+        ]
+    }
+    siduser101@jump:~/ansible-network-labs$
+    ```
+1. <span style="color:red">Challenge - If time permits, change banner.yml or create a new playbook to use the ***cli_config*** module.</span>
+    > **Tip**: he `ansible-navigator doc <module or plugin name>` command not only defines the task parameters that ‘cli_config’ takes but also gives examples. With a few minor changes, banner.yml can be moved to the more agnostic cli_config module.  Also, watch out for the usage of quotes.  If you use quote where you are not supposed to, your playbook will not work even though syntax is correct.
+## Backing Up Configurations
+Now you will do a common networking task, backing up the configuration of the router.  In this case, if you are going to back up one router config, you might as well back them all up.  We will use the -i parameter to override the default hosts file with the all-hosts file to backup all the routers configuration.
+1. We will start by using an older method of backing up a router config.  Look at the 2.2-backup.yml file and examine the contents. Notice that you are not specifying a name or where to backup the file.
+    ```yml
+    1 ---
+    2 - name: backup ios router configurations
+    3   hosts: routers
+    4   connection: network_cli
+    5   gather_facts: no
+    6 
+    7   tasks:
+    8 
+    9   - name: backup router configuration
+    10     ios_config:
+    11       backup: yes
+    12 ...
+    ```
+1. Run the playbook.
+    ```yml
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 2.2-backup.yml -i all-hosts
+
+    PLAY [backup ios router configurations] ****************************************
+
+    TASK [backup router configuration] *********************************************
+    changed: [R102]
+    changed: [R105]
+    changed: [R104]
+    changed: [R101]
+    changed: [R103]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R102                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R103                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R104                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R105                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+1. Explore the resulting backup files which can be found in the backup sub-directory where the backup.yml file is
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ls
+    1.0-router-facts.yml        2.2-backup.yml          4.0-tower-backup.yml   hosts
+    1.1-facts2.yml              2.3-cli-backup.yml      4.1-tower-snmp.yml     lab_documentation
+    1.2.1-adv-facts.yml         2.4-adv-cli-backup.yml  all-hosts              misc
+    1.2.2-adv-facts-filter.yml  2.5-restore-backup.yml  ansible.cfg            README.md
+    1.3-init.yml                3.0-dns-cfg.yml         ansible-navigator.log  run-artifacts
+    1.4-user-setup.yml          3.1-gre.yml             ansible-navigator.yml  tower-hosts
+    2.0-snmp.yml                32-secure-config.cfg    backup                 vars.yml
+    2.1-banner.yml              3.2-secure-config.yml   encrypt.yml
+
+    siduser101@jump:~/ansible-network-labs$ ls backup
+    R101_config.2022-08-30@03:57:46  R103_config.2022-08-30@03:57:46  R105_config.2022-08-30@03:57:46
+    R102_config.2022-08-30@03:57:46  R104_config.2022-08-30@03:57:46
+    siduser101@jump:~/ansible-network-labs$
+    ```
+    > **Tip**: Notice the 'backup' directory was created.  Also note the filename structure for the created backup files.
+1. View the backed-up configuration file (*Your filename will be different than the example below).
+    ```bash
+    1 Building configuration...
+    2 
+    3 Current configuration : 7137 bytes
+    4 !
+    5 ! Last configuration change at 03:48:17 UTC Tue Aug 30 2022 by ec2-user
+    6 !
+    7 version 17.1
+    8 service timestamps debug datetime msec
+    9 service timestamps log datetime msec
+    10 service password-encryption
+    11 ! Call-home is enabled by Smart-Licensing.
+    12 service call-home
+    13 platform qfp utilization monitor load 80
+    14 platform punt-keepalive disable-kernel-core
+    15 platform console virtual
+    16 !
+    17 hostname R101
+    18 !
+    19 boot-start-marker
+    20 boot-end-marker
+    21 !
+    22 !
+    23 vrf definition GS
+    24  rd 100:100
+    25  !
+    26  address-family ipv4
+    27  exit-address-family
+    28 !
+    29 logging persistent size 1000000 filesize 8192 immediate
+    30 !
+    31 no aaa new-model
+    32 call-home
+    33  ! If contact email address in call-home is configured as sch-smart-licensing@cisco.com
+    34  ! the email address configured in Cisco Smart License Portal will be used as contact email address to send     SCH notifications.
+    35  contact-email-addr sch-smart-licensing@cisco.com
+    36  profile "CiscoTAC-1"
+    37   active
+    38   destination transport-method http
+    ...
+    << OUTPUT TRUNCATED >>
+    ```
+    > **Tip**: Filenames are case sensitive in Linux.
+
+## Backups using the cli_command module
+While the *ios_config* module has a convenient backup parameter it is of course very much vendor specfic and similar modules exist for the major Network Platforms. Beginning in Ansible 2.7 there are 2 new, more generic, modules: *cli_config* and *cli_command*. The advantage here being, simpler, more generic playbooks can be developed to more cleanly support a multi-vendor environment. See Appendix A for link to deeper dive into *cli_command*.
+1. Examine the contents of the 2.3-cli-backup.yml file.
+    ```yml
+    1 ---
+    2 
+    3 - name: backup router configuration with cli_command module
+    4   hosts: routers
+    5   connection: network_cli
+    6   gather_facts: no
+    7 
+    8   tasks:
+    9     - name: backup config
+    10       cli_command:
+    11         command: show run
+    12       register: backup
+    13 
+    14     - name: move to file
+    15       copy:
+    16         content: "{{ backup.stdout }}"
+    17         dest: "backup/{{ inventory_hostname }}_config.{{ lookup('pipe','date +%Y-%m-%d@%H:%M:%S') }}"
+    18 ...
+    ```
+1. Run the playbook.
+    ```yml
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 2.3-cli-backup.yml -i all-hosts
+
+    PLAY [backup router configuration with cli_command module] *********************
+
+    TASK [backup config] ***********************************************************
+    ok: [R104]
+    ok: [R105]
+    ok: [R103]
+    ok: [R102]
+    ok: [R101]
+
+    TASK [move to file] ************************************************************
+    changed: [R105]
+    changed: [R102]
+    changed: [R104]
+    changed: [R103]
+    changed: [R101]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R102                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R103                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R104                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    R105                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$
+    ```
+1. Explore the resulting backup files which can be found in the backup directory.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ls -l backup/
+    total 80
+    -rw-r--r--. 1 siduser101 siduser101 7199 Aug 30 03:57 R101_config.2022-08-30@03:57:46
+    -rw-r--r--. 1 siduser101 siduser101 7199 Aug 30 04:09 R101_config.2022-08-30@04:09:44
+    -rw-r--r--. 1 siduser101 siduser101 6918 Aug 30 03:57 R102_config.2022-08-30@03:57:46
+    -rw-r--r--. 1 siduser101 siduser101 6918 Aug 30 04:09 R102_config.2022-08-30@04:09:44
+    -rw-r--r--. 1 siduser101 siduser101 6918 Aug 30 03:57 R103_config.2022-08-30@03:57:46
+    -rw-r--r--. 1 siduser101 siduser101 6918 Aug 30 04:09 R103_config.2022-08-30@04:09:44
+    -rw-r--r--. 1 siduser101 siduser101 6910 Aug 30 03:57 R104_config.2022-08-30@03:57:46
+    -rw-r--r--. 1 siduser101 siduser101 6910 Aug 30 04:09 R104_config.2022-08-30@04:09:45
+    -rw-r--r--. 1 siduser101 siduser101 6918 Aug 30 03:57 R105_config.2022-08-30@03:57:46
+    -rw-r--r--. 1 siduser101 siduser101 6918 Aug 30 04:09 R105_config.2022-08-30@04:09:45
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+1. Compare the new backups to the ones create earlier.
+    > **Tip**: The sum command can be used to generate a checksum of each file and allow you to verify if your backups differ.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ sum backup/R101_config.2022-08-30@03\:57\:46 
+    22684     8
+    siduser101@jump:~/ansible-network-labs$ sum backup/R101_config.2022-08-30@04\:09\:44 
+    22684     8
+    ```
+### <span style="color:red">*** Bonus Excercises ***</span>
+1. Take a look at the 2.4-adv-cli-backup.yml file.  This playbook adds the feature of cleaning out configuration portions that would cause a restore to fail.  Otherwise removing the top 2 lines of the backup file would be manual prior to a restore.
+1. Take a look at the 2.5-restore-backup.yml file.  This is a simple way to restore a configuration.
+> **Tip**: `scp` is a system requirement upon which the 2.5 playbook is dependent.
+
+## Configure DNS and Loopback 0
+1. Edit the ***vars.yml*** file. Change << Student ID Number >> and << Router Hostname >> to your values. See  below for an example.  This variable file will be referenced in the playbooks and will be used in the remainder of the labs.
+    ```yml
+    1 studentid: << Student ID Number >>
+    2 studentrouter: <<Router Hostname >>
+    3 ansible_network_os: ios
+    4 dns_servers:
+    5   - 8.8.8.8
+    6   - 8.8.4.4
+    7 r0g2ip: 10.2.0.10
+    ```
+    > **Tip**: An Ansible Best practice is to use variables.  There are many places to put variables and there is a hierarchy of variables that will take priority.  We are using an example here of a usage of variables, but this location and position are not necessarily best practice. Please read the document referenced by the link in the Appendix A.  It is important to learn and understand using variables.
+1. View the contents of the 3.0-dns-cfg.yml playbook.
+    ```yml
+    1 ---
+    2 - name: Router Configurations
+    3   hosts: routers
+    4   gather_facts: no
+    5   connection: network_cli
+    6 
+    7   vars_files:
+    8     - vars.yml
+    9 
+    10   tasks:
+    11   - name: configure router {{ studentrouter }}
+    12     block:
+    13       - name: configure name servers
+    14         ios_config:
+    15           lines:
+    16             - ip name-server {{ item }}
+    17         loop: "{{ dns_servers }}"
+    18 
+    19       - name: enable LoopBack0 interface
+    20         ios_interface:
+    21           name: Loopback 0
+    22           description: Loopback Interface 0
+    23           state: present
+    24 
+    25       - name: Configure L0
+    26         ios_config:
+    27           lines:
+    28             - ip address 172.17.{{ studentid }}.1 255.255.255.0
+    29           parents: interface Loopback0
+    30     when: ' studentrouter in inventory_hostname '
+    31 ...
+    ```
+    > **Note**: The ‘block:’ statement in the playbook allows us to group multiple related tasks together, here we are using it combined with the when statement to group tasks together for your router.  The example is not typical, but it serves to illustrate a few different features.    
+    Also notice the use of loop to iterate through the 2 values of the list variable dns_servers. Prior to Ansible 2.5 we would have had to use with_items:  .
+
+1. Run the 3.0-dns-cfg.yml playbook with the –i all-hosts parameter.  (In this lab we are showing 1 way of making a playbook device specific even when other devices exist in the inventory)
+    ```yml
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 3.0-dns-cfg.yml -i all-hosts
+
+    PLAY [Router Configurations] ***************************************************
+
+    TASK [configure name servers] **************************************************
+    skipping: [R101] => (item=8.8.8.8) 
+    skipping: [R101] => (item=8.8.4.4) 
+    skipping: [R102] => (item=8.8.8.8) 
+    skipping: [R102] => (item=8.8.4.4) 
+    skipping: [R103] => (item=8.8.8.8) 
+    skipping: [R103] => (item=8.8.4.4) 
+    skipping: [R104] => (item=8.8.8.8) 
+    skipping: [R104] => (item=8.8.4.4) 
+    skipping: [R105] => (item=8.8.8.8) 
+    skipping: [R105] => (item=8.8.4.4) 
+
+    TASK [enable LoopBack0 interface] **********************************************
+    skipping: [R101]
+    skipping: [R102]
+    skipping: [R103]
+    skipping: [R104]
+    skipping: [R105]
+
+    TASK [Configure L0] ************************************************************
+    skipping: [R101]
+    skipping: [R102]
+    skipping: [R103]
+    skipping: [R104]
+    skipping: [R105]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=0    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+    R102                       : ok=0    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+    R103                       : ok=0    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+    R104                       : ok=0    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+    R105                       : ok=0    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$
+    ```
+    > **Note**: Notice how the other routers from the all-hosts inventory file were skipped.
+
+## Configure GRE tunnel and Routing
+1. `ssh` into your router.  Ping the instructor's loopback interface from your loopback interface.
+    ```bash
+
     ```

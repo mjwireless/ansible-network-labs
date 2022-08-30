@@ -3,10 +3,10 @@
   hosts: routers
   gather_facts: no
   connection: network_cli
-  
+
   vars_files:
     - vars.yml
-      
+
   tasks:
   - name: configure router {{ studentrouter }}
     block:
@@ -15,13 +15,13 @@
           lines:
             - ip name-server {{ item }}
         loop: "{{ dns_servers }}"
-    
+
       - name: enable LoopBack0 interface
         ios_interface:
           name: Loopback 0
           description: Loopback Interface 0
           state: present
-      
+
       - name: Configure L0
         ios_config:
           lines:
