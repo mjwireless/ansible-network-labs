@@ -71,6 +71,24 @@ The following is an example using Putty.
 
     ![](images/putty_username_password.png)
 
+### Clone your repository
+Now use the `git clone` command to download your remote repository to the local jump host.
+```bash
+    Welcome to the CDW/Sirius Red Hat Immersion Day lab environment
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    siduser254@jump:~$ git clone https://github.com/<your github userid>/ansible-network-labs.git
+    Cloning into 'ansible-network-labs'...
+    remote: Enumerating objects: 533, done.
+    remote: Counting objects: 100% (36/36), done.
+    remote: Compressing objects: 100% (28/28), done.
+    remote: Total 533 (delta 19), reused 20 (delta 8), pack-reused 497
+    Receiving objects: 100% (533/533), 97.57 KiB | 4.07 MiB/s, done.
+    Resolving deltas: 100% (324/324), done.
+    siduser254@jump:~$ ls
+    ansible-network-labs
+    siduser254@jump:~$ 
+```
+
 ## Part 2: Explore the environment
 ### Overview
 * Review the topology
