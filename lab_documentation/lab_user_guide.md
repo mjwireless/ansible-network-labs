@@ -910,3 +910,87 @@ Run playbook 1.4 using ansible vault to encrypt and decrypt a variable file cont
     siduser101@jump:~/ansible-network-labs$ 
 
     ```
+
+## Lab 2 Overview
+* Configure SNMP
+* Gather banner information and reconfigure the banner
+* Backup router confiruration
+
+### Configure SNMP settings
+1. Look at the 2.0-snmp.yml file and examine the contents.  Modify the playbook with your own values.
+    ```yml
+    1 ---
+    2 - name: snmp ro/rw string configuration
+    3   hosts: routers
+    4   gather_facts: no
+    5 
+    6   tasks:
+    7 
+    8     - name: ensure that the desired snmp strings are present
+    9       ios_config:
+    10         commands:
+    11           - snmp-server community ansible-public RO
+    12           - snmp-server community ansible-private RW
+    13 ...
+
+    ```
+1. Run the playbook.
+    ```bash
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 2.0-snmp.yml 
+
+    PLAY [snmp ro/rw string configuration] *****************************************
+
+    TASK [ensure that the desired snmp strings are present] ************************
+    [WARNING]: To ensure idempotency and correct diff the input configuration lines
+    should be similar to how they appear if present in the running configuration on
+    device
+    changed: [R101]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+    > **Note**: Notice how this playbook does not use variables.  It is best practice to use variable when specific parameters are subject to change such as a security requirement to change snmp community strings every 3 months.  This is also where Ansible Tower can help with the use of surveys.
+    
+    <span style="color:red">BONUS Excercises</span>    
+    Validate that your router has the snmp configuration.
+    1. <span style="color:red">Bonus #1</span>: Try using ansible ad-hoc to validate the configuration.
+    1. <span style="color:red">Bonus #2</span>: Try writing a playbook to validate the configuration.
+### Configure routers MOTD
+1. Check that the message of the day (MOTD) is set.
+    ```json
+    siduser101@jump:~/ansible-network-labs$ ansible routers -m ios_command -a "commands='sh banner mot'"
+    R101 | SUCCESS => {
+        "changed": false,
+        "stdout": [
+            "oops, you ran this playbook without reading it first!"
+        ],
+        "stdout_lines": [
+            [
+                "oops, you ran this playbook without reading it first!"
+            ]
+        ]
+    }
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+1. Look at the 2.1-banner.yml file in the lab2 directory and examine the contents.  Modify the banner variable to something you choose in the repository and pull-down changes to jump station and validate changes successfully downloaded.
+    ```yml
+    1 ---
+    2 - name: Update banner message
+    3   hosts: routers
+    4   connection: network_cli
+    5   gather_facts: no
+    6 
+    7   vars:
+    8     banner_message: CDW Immersion Days are Super Fun and Cool!!!!
+    9 
+    10   tasks:
+    11   - name: "Update banner message to '{{ banner_message }}'"
+    12     ios_config:
+    13       lines:
+    14         - "banner motd % {{ banner_message }} %"
+    15 ...
+    ```
+    > **Note**: Notice the use of vars to setup a variable banner_message.  The use of vars is important to making playbooks more reuseable and facilitates easier editing.  The variable can be reset at the command line by using ansible-playbook banner.yml -e "banner_message='my new message’”.  The -e option allows you to over-write any variable as it has the highest priority in the Ansible variable structure.
+1. Run the playbook.
+    ```

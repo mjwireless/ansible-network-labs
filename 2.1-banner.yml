@@ -1,4 +1,4 @@
---- 
+---
 - name: Update banner message
   hosts: routers
   connection: network_cli
