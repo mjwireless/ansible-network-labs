@@ -1302,5 +1302,42 @@ While the *ios_config* module has a convenient backup parameter it is of course 
 ## Configure GRE tunnel and Routing
 1. `ssh` into your router.  Ping the instructor's loopback interface from your loopback interface.
     ```bash
+    siduser101@jump:~/ansible-network-labs$ ssh siduserXXX@10.1.101.10
+    Password: 
+    Password: 
+    Sirius Immersion Days are Super Fun and Cool!!!! 
+
+
+    R101#ping 172.17.0.1 source l0
+                                ^
+    % Invalid input detected at '^' marker.
+
+    ```
+    > **Note**: This fails because we do not have a GRE Tunnel and routing existing between your router and the instructor router.
+1. Disconnect from your router by typing exit.
+    ```
+    R101#exit
+    ```
+1. Run the 3.0-gre.yml playbook.
+    ```yml
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 3.1-gre.yml 
+
+    PLAY [Configure GRE Tunnel] ****************************************************
+
+    TASK [create tunnel interface to R0] *******************************************
+    [WARNING]: To ensure idempotency and correct diff the input configuration lines
+    should be similar to how they appear if present in the running configuration on
+    device
+    changed: [R101]
+
+    TASK [Configure OSPF] **********************************************************
+    changed: [R101]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=2    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$
+    ```
+1. `ssh` into your router.   Ping the instructor's loopback interface from your loopback interface.
+    ```bash
 
     ```
