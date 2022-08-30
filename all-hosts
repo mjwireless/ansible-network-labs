@@ -36,8 +36,6 @@ R107 ansible_host=10.1.107.10
 R108 ansible_host=10.1.108.10
 R109 ansible_host=10.1.109.10
 R110 ansible_host=10.1.110.10
-<<<<<<< HEAD
-=======
 R111 ansible_host=10.1.111.10
 R112 ansible_host=10.1.112.10
 R113 ansible_host=10.1.113.10
@@ -48,42 +46,6 @@ R117 ansible_host=10.1.117.10
 R118 ansible_host=10.1.118.10
 R119 ansible_host=10.1.119.10
 R120 ansible_host=10.1.120.10
-R121 ansible_host=10.1.121.10
-R122 ansible_host=10.1.122.10
-
-
-[lab-master]
-R150 ansible_host=10.1.150.10
-R151 ansible_host=10.1.151.10
-R152 ansible_host=10.1.152.10
-R153 ansible_host=10.1.153.10
-R154 ansible_host=10.1.154.10
-R155 ansible_host=10.1.155.10
-R156 ansible_host=10.1.156.10
-R157 ansible_host=10.1.157.10
-R158 ansible_host=10.1.158.10
-R159 ansible_host=10.1.159.10
-R160 ansible_host=10.1.160.10
-R161 ansible_host=10.1.161.10
-R162 ansible_host=10.1.162.10
-R163 ansible_host=10.1.163.10
-R164 ansible_host=10.1.164.10
-R165 ansible_host=10.1.165.10
-R166 ansible_host=10.1.166.10
-R167 ansible_host=10.1.167.10
-R168 ansible_host=10.1.168.10
-R169 ansible_host=10.1.169.10
-R170 ansible_host=10.1.170.10
-R171 ansible_host=10.1.171.10
-R172 ansible_host=10.1.172.10
-R173 ansible_host=10.1.173.10
-R174 ansible_host=10.1.174.10
-R175 ansible_host=10.1.175.10
-R176 ansible_host=10.1.176.10
-R177 ansible_host=10.1.177.10
-R178 ansible_host=10.1.178.10
-R179 ansible_host=10.1.179.10
->>>>>>> 66fb10c5065069c24dbf928e8cbc8bab0ef7cb3a
 
 [lab:vars]
 ansible_network_os=ios
