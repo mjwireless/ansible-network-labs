@@ -1341,3 +1341,68 @@ While the *ios_config* module has a convenient backup parameter it is of course 
     ```bash
 
     ```
+## Configure security setting via file
+1. Review the 32-secure-config.cfg file.
+    ```yml
+    1 line con 0
+    2  exec-timeout 5 0
+    3 line vty 0 4
+    4  exec-timeout 5 0
+    5  transport input ssh
+    6 ip ssh time-out 60
+    7 ip ssh authentication-retries 5
+    8 service password-encryption
+    9 service tcp-keepalives-in
+    10 service tcp-keepalives-out
+    ```
+1. Review the 3.2-secure-config.yml playbook.
+    ```yml
+    1 ---
+    2 - name: HARDEN IOS ROUTERS
+    3   hosts: routers
+    4   gather_facts: no
+    5   connection: network_cli
+    6 
+    7   tasks:
+    8     - name: ENSURE THAT ROUTERS ARE SECURE
+    9       ios_config:
+    10         src: 32-secure-config.cfg
+    11 ...
+    ```
+1. Run the 3.2-secure-config.yml playbook.
+    ```yml
+    siduser101@jump:~/ansible-network-labs$ ansible-navigator run 3.2-secure-config.yml 
+
+    PLAY [HARDEN IOS ROUTERS] ******************************************************
+
+    TASK [ENSURE THAT ROUTERS ARE SECURE] ******************************************
+    [WARNING]: To ensure idempotency and correct diff the input configuration lines
+    should be similar to how they appear if present in the running configuration on
+    device including the indentation
+    changed: [R101]
+
+    PLAY RECAP *********************************************************************
+    R101                       : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+    siduser101@jump:~/ansible-network-labs$ 
+    ```
+1. Validate that the router has the new configuration.
+
+
+1. `ssh` into your router and ping another student's router
+    ```bash
+
+    ```
+
+# Lab 4 - Red Hat Automation Controller
+* Access Automation Controller
+* Build a backup job with scheduling
+* Interact with a job containing a survey
+## Access Ansible Automation Controller
+1. Open a web browser and go to https://rhaap2.mysidlabs.com. You can log in with your lab username and password.
+![ac_login.png should be visible here](images/ac_login.png)
+1. Once you are logged in, follow along with the instructor as he explores the interface.
+![ac_home.png should be visible here](images/ac_home.png)
+
+## Build a backup job
+1. Modify your github repositorie's tower-hosts file to contain your router information.
+1. Create a new project.  Click ‘Projects’ on the left-hand side of the page.  Then click the plus ‘+’ icon to add a new inventory.
